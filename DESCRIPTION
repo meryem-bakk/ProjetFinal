@@ -1,0 +1,25 @@
+Package: ProjetFinal
+Title: Rangeland Species Distribution Modeling and Grazing Management
+Version: 0.1.0
+Authors@R: 
+       person("Meryem", "EL BAKKOURI", , "meryem.elbakkouri@iav.ac.ma", role = c("aut", "cre"))
+Description: An R package for forage species distribution modeling,
+    biomass estimation, carrying capacity analysis,
+    grazing pressure assessment and rangeland mapping
+    using environmental and remote sensing data.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 8.0.0
+Depends: 
+    R (>= 4.0.0)
+Imports:
+    terra,
+    sf,
+    dplyr,
+    ggplot2,
+    randomForest
+Suggests:
+    testthat (>= 3.0.0)
+LazyData: true
+Config/testthat/edition: 3
