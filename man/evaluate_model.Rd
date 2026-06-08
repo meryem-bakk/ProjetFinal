@@ -2,38 +2,59 @@
 % Please edit documentation in R/evaluate_model.R
 \name{evaluate_model}
 \alias{evaluate_model}
-\title{Evaluation du modèle SDM}
+\title{Evaluate SDM model performance}
 \usage{
-evaluate_model(observed, predicted)
+evaluate_model(observed, predicted, show_plots = TRUE)
 }
 \arguments{
-\item{observed}{Valeurs observées}
+\item{observed}{Valeurs observees
+(presence/absence ou biomasse mesuree).}
 
-\item{predicted}{Valeurs prédites}
+\item{predicted}{Valeurs predites par le modele.}
+
+\item{show_plots}{Afficher ou non les graphiques.}
 }
 \value{
-Dataframe contenant Accuracy et RMSE
+Liste contenant :
+\itemize{
+\item tableau des performances
+\item objet ROC
+}
 }
 \description{
-Calcule les performances du modèle de distribution
-des espèces fourragères.
+Evalue les performances du modele de
+distribution des especes fourrageres.
 }
 \details{
-Les métriques calculées sont :
+Cette fonction calcule :
 \itemize{
-\item Accuracy
-\item RMSE
+\item AUC pour les modeles de distribution,
+\item Accuracy pour presence/absence,
+\item RMSE pour estimation biomasse.
+}
+
+Elle peut egalement produire :
+\itemize{
+\item ROC curve,
+\item graphique observed vs predicted.
 }
 }
 \examples{
 observed <- c(1,0,1,1,0)
-predicted <- c(1,0,1,0,0)
+predicted <- c(0.8,0.2,0.7,0.9,0.1)
 
-evaluate_model(observed, predicted)
+result <- evaluate_model(
+  observed,
+  predicted,
+  show_plots = FALSE
+)
+
+result$performance
 
 }
 \references{
 Fielding, A.H. & Bell, J.F. (1997).
 A review of methods for the assessment
-of prediction errors in conservation presence/absence models.
+of prediction errors in conservation
+presence/absence models.
 }

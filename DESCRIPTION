@@ -16,9 +16,12 @@ Depends:
 Imports:
     terra,
     sf,
-    dplyr,
-    ggplot2,
-    randomForest
+    randomForest,
+    readxl,
+    pROC,
+    geodata,
+    rgbif,
+    rmarkdown
 Suggests:
     testthat (>= 3.0.0)
 LazyData: true
