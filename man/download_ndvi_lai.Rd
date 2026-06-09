@@ -2,30 +2,112 @@
 % Please edit documentation in R/download_ndvi_lai.R
 \name{download_ndvi_lai}
 \alias{download_ndvi_lai}
-\title{Download NDVI and LAI data}
+\title{Telechargement ou import des donnees NDVI et LAI}
 \usage{
-download_ndvi_lai(ndvi_file = NULL, lai_file = NULL)
+download_ndvi_lai(
+  ndvi_file = NULL,
+  lai_file = NULL,
+  site_name = "study_area",
+  lat = NULL,
+  lon = NULL,
+  start = "2023-01-01",
+  end = "2023-12-31",
+  km_lr = 10,
+  km_ab = 10,
+  path = "modis_data"
+)
 }
 \arguments{
-\item{ndvi_file}{Chemin raster NDVI optionnel}
+\item{ndvi_file}{Chemin vers un fichier raster NDVI
+local (GeoTIFF ou tout format lisible par terra).
+Si NULL, telechargement MODIS automatique.}
 
-\item{lai_file}{Chemin raster LAI optionnel}
+\item{lai_file}{Chemin vers un fichier raster LAI
+local. Si NULL, telechargement MODIS automatique.}
+
+\item{site_name}{Nom du site d'etude (utilise lors
+du telechargement MODIS).}
+
+\item{lat}{Latitude du centre de la zone d'etude.
+Obligatoire si ndvi_file ou lai_file est NULL.}
+
+\item{lon}{Longitude du centre de la zone d'etude.
+Obligatoire si ndvi_file ou lai_file est NULL.}
+
+\item{start}{Date de debut au format "YYYY-MM-DD".}
+
+\item{end}{Date de fin au format "YYYY-MM-DD".}
+
+\item{km_lr}{Extension en km vers la gauche/droite.}
+
+\item{km_ab}{Extension en km vers le haut/bas.}
+
+\item{path}{Dossier de stockage des fichiers telecharges.}
 }
 \value{
-Liste contenant les rasters NDVI et LAI
+Liste nommee contenant :
+\describe{
+\item{NDVI}{Raster SpatRaster NDVI (valeurs 0-1)}
+\item{LAI}{Raster SpatRaster LAI (m2/m2)}
+}
 }
 \description{
-Telecharge ou importe les donnees NDVI et LAI.
+Charge les donnees NDVI et LAI depuis des fichiers
+raster locaux, ou les telecharge automatiquement
+depuis MODIS via le package MODISTools.
 }
 \details{
-Fonctionnalites :
+Deux modes de fonctionnement :
+
+\strong{Mode local} _ si \code{ndvi_file} et/ou
+\code{lai_file} sont fournis, la fonction charge
+directement ces fichiers avec \code{terra::rast()}.
+
+\strong{Mode MODIS automatique} _ si aucun fichier
+n'est fourni, la fonction utilise MODISTools pour
+telecharger :
 \itemize{
-\item chargement raster NDVI
-\item chargement raster LAI
-\item preparation pour analyse spatiale
+\item NDVI : produit MOD13Q1 (250 m, 16 jours)
+\item LAI  : produit MOD15A2H (500 m, 8 jours)
 }
+Les donnees brutes sont converties en raster
+\code{SpatRaster} georeference (CRS WGS84).
+
+Le facteur d'echelle MODIS est applique
+automatiquement (NDVI x 0.0001, LAI x 0.1).
 }
 \examples{
-veg <- download_ndvi_lai()
+\dontrun{
 
+# Mode local
+veg <- download_ndvi_lai(
+  ndvi_file = "data/ndvi.tif",
+  lai_file  = "data/lai.tif"
+)
+
+# Mode MODIS automatique
+veg <- download_ndvi_lai(
+  lat   = 31.5,
+  lon   = -7.5,
+  start = "2023-01-01",
+  end   = "2023-12-31"
+)
+
+terra::plot(veg$NDVI)
+terra::plot(veg$LAI)
+}
+
+}
+\references{
+Didan, K. (2015). MOD13Q1 MODIS/Terra Vegetation
+Indices 16-Day L3 Global 250m SIN Grid V006.
+NASA EOSDIS Land Processes DAAC.
+
+Myneni, R. et al. (2015). MOD15A2H MODIS/Terra
+Leaf Area Index/FPAR 8-Day L4 Global 500m SIN
+Grid V006. NASA EOSDIS Land Processes DAAC.
+
+Tuck, S.L. et al. (2014). MODISTools: downloading
+and processing MODIS remotely sensed data in R.
+Ecology and Evolution.
 }

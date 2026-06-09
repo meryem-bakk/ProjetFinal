@@ -21,7 +21,8 @@ Imports:
     pROC,
     geodata,
     rgbif,
-    rmarkdown
+    rmarkdown,
+    MODISTools
 Suggests:
     testthat (>= 3.0.0)
 LazyData: true
