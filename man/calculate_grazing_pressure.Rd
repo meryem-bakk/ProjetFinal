@@ -7,39 +7,41 @@
 calculate_grazing_pressure(biomass, carrying_capacity, animal_density = NULL)
 }
 \arguments{
-\item{biomass}{Biomasse disponible (kg/ha).}
+\item{biomass}{Biomasse disponible (kg/ha).
+Numerique ou SpatRaster.}
 
-\item{carrying_capacity}{Capacité de charge estimée
-(UBT/ha).}
+\item{carrying_capacity}{Capacite de charge estimee
+(UBT/ha). Numerique ou SpatRaster.}
 
-\item{animal_density}{Densité animale réelle
+\item{animal_density}{Densite animale reelle
 (UBT/ha). Optionnelle.}
 }
 \value{
 Indice de pression pastorale.
 }
 \description{
-Analyse la pression de pâturage en comparant
-la densité animale avec la capacité de charge disponible.
+Analyse la pression de paturage en comparant
+la densite animale avec la capacite de charge disponible.
 }
 \details{
-La pression pastorale est calculée par :
+La pression pastorale est calculee par :
 
 \deqn{
 GrazingPressure =
 \frac{AnimalDensity}{CarryingCapacity}
 }
 
-Interprétation :
+Interpretation :
 \itemize{
-\item inférieur à 1 : faible pression (sous-pâturage)
-\item égal à 1 : équilibre
-\item supérieur à 1 : forte pression (surpâturage)
+\item inferieur a 1 : faible pression (sous-paturage)
+\item egal a 1 : equilibre
+\item superieur a 1 : forte pression (surpaturage)
 }
 
-Si aucune densité animale n'est fournie,
+Si aucune densite animale n'est fournie,
 la fonction utilise la biomasse disponible
-pour produire un indice relatif.
+pour produire un indice relatif normalise
+entre 0 et 1.
 
 Compatible avec les rasters terra.
 }

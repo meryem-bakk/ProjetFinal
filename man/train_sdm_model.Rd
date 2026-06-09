@@ -13,25 +13,35 @@ train_sdm_model(
 }
 \arguments{
 \item{data}{Dataframe contenant les variables environnementales
-et la variable présence.}
+et la variable presence.}
 
-\item{target}{Variable cible.}
+\item{target}{Variable cible (presence/absence). Par defaut "presence".}
 
-\item{predictors_raster}{Raster environnemental optionnel.}
+\item{predictors_raster}{Raster environnemental optionnel.
+Si fourni, un raster de suitabilite est produit (probabilites).}
 
-\item{ntree_values}{Valeurs de ntree à tester.}
+\item{ntree_values}{Valeurs de ntree a tester lors du tuning.}
 }
 \value{
 Liste contenant :
 \itemize{
-\item modèle SDM
-\item importance variables
-\item performances train/test
-\item suitability raster (optionnel)
+\item model : meilleur modele Random Forest
+\item best_ntree : valeur ntree selectionnee
+\item train_accuracy : precision sur le jeu d'entrainement
+\item test_accuracy : precision sur le jeu de test
+\item importance : importance des variables
+\item suitability_raster : raster de probabilites (si predictors_raster fourni)
 }
 }
 \description{
-Modélisation des espèces fourragères.
+Modelisation des especes fourrageres par Random Forest.
+}
+\details{
+Le tuning selectionne le ntree maximisant l'accuracy
+sur le jeu de test (30 pourcent des donnees).
+
+Le raster de suitabilite contient les probabilites
+de presence (classe "1") issues de predict(..., type = "prob").
 }
 \examples{
 \dontrun{

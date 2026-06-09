@@ -4,21 +4,23 @@
 \alias{evaluate_model}
 \title{Evaluate SDM model performance}
 \usage{
-evaluate_model(observed, predicted, show_plots = TRUE)
+evaluate_model(observed, predicted, show_plots = FALSE)
 }
 \arguments{
-\item{observed}{Valeurs observees
-(presence/absence ou biomasse mesuree).}
+\item{observed}{Valeurs observees binaires
+(0 = absence, 1 = presence).}
 
-\item{predicted}{Valeurs predites par le modele.}
+\item{predicted}{Valeurs predites par le modele
+(probabilites comprises entre 0 et 1).}
 
-\item{show_plots}{Afficher ou non les graphiques.}
+\item{show_plots}{Afficher ou non les graphiques.
+Par defaut FALSE.}
 }
 \value{
 Liste contenant :
 \itemize{
-\item tableau des performances
-\item objet ROC
+\item performance : tableau AUC, Accuracy, RMSE
+\item roc : objet ROC (pROC)
 }
 }
 \description{
@@ -30,7 +32,7 @@ Cette fonction calcule :
 \itemize{
 \item AUC pour les modeles de distribution,
 \item Accuracy pour presence/absence,
-\item RMSE pour estimation biomasse.
+\item RMSE pour estimation continue.
 }
 
 Elle peut egalement produire :
@@ -38,10 +40,14 @@ Elle peut egalement produire :
 \item ROC curve,
 \item graphique observed vs predicted.
 }
+
+Les vecteurs observed et predicted doivent
+avoir la meme longueur. observed doit etre
+binaire (0/1) pour le calcul de l'AUC.
 }
 \examples{
-observed <- c(1,0,1,1,0)
-predicted <- c(0.8,0.2,0.7,0.9,0.1)
+observed  <- c(1, 0, 1, 1, 0)
+predicted <- c(0.8, 0.2, 0.7, 0.9, 0.1)
 
 result <- evaluate_model(
   observed,

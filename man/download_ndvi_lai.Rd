@@ -7,6 +7,7 @@
 download_ndvi_lai(
   ndvi_file = NULL,
   lai_file = NULL,
+  boundary_file = NULL,
   site_name = "study_area",
   lat = NULL,
   lon = NULL,
@@ -24,6 +25,11 @@ Si NULL, telechargement MODIS automatique.}
 
 \item{lai_file}{Chemin vers un fichier raster LAI
 local. Si NULL, telechargement MODIS automatique.}
+
+\item{boundary_file}{Chemin vers un fichier spatial
+de la zone d'etude (.shp ou .geojson).
+Si fourni, le centre de la zone est extrait
+automatiquement et utilise pour le telechargement MODIS.}
 
 \item{site_name}{Nom du site d'etude (utilise lors
 du telechargement MODIS).}
@@ -59,11 +65,11 @@ depuis MODIS via le package MODISTools.
 \details{
 Deux modes de fonctionnement :
 
-\strong{Mode local} _ si \code{ndvi_file} et/ou
+\strong{Mode local} - si \code{ndvi_file} et/ou
 \code{lai_file} sont fournis, la fonction charge
 directement ces fichiers avec \code{terra::rast()}.
 
-\strong{Mode MODIS automatique} _ si aucun fichier
+\strong{Mode MODIS automatique} - si aucun fichier
 n'est fourni, la fonction utilise MODISTools pour
 telecharger :
 \itemize{
@@ -75,6 +81,10 @@ Les donnees brutes sont converties en raster
 
 Le facteur d'echelle MODIS est applique
 automatiquement (NDVI x 0.0001, LAI x 0.1).
+
+Les pixels invalides (valeur < -3000) sont remplaces
+par NA avant la moyenne temporelle, sans decaler
+les indices de position dans le raster.
 }
 \examples{
 \dontrun{
@@ -85,12 +95,17 @@ veg <- download_ndvi_lai(
   lai_file  = "data/lai.tif"
 )
 
-# Mode MODIS automatique
+# Mode MODIS automatique avec coordonnees
 veg <- download_ndvi_lai(
   lat   = 31.5,
   lon   = -7.5,
   start = "2023-01-01",
   end   = "2023-12-31"
+)
+
+# Mode MODIS automatique avec shapefile
+veg <- download_ndvi_lai(
+  boundary_file = "study_area.shp"
 )
 
 terra::plot(veg$NDVI)

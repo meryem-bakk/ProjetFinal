@@ -9,8 +9,11 @@
 #' @param predictors Raster contenant les variables
 #' environnementales (NDVI, LAI, climat, altitude).
 #'
+#' @param target Nom de la variable cible a exclure
+#' du calcul de correlation. Par defaut "presence".
+#'
 #' @param remove_cor Logical. Supprimer ou non les
-#' variables fortement correlees.
+#' variables fortement correlees (seuil > 0.9).
 #'
 #' @return Dataframe pret pour la modelisation ML.
 #'
@@ -21,6 +24,10 @@
 #' - combinaison presence + environnement,
 #' - suppression des valeurs manquantes,
 #' - suppression optionnelle des variables correlees.
+#'
+#' La variable cible (par defaut "presence") est
+#' exclue du calcul de correlation pour ne pas
+#' etre supprimee par erreur.
 #'
 #' Variables possibles :
 #' - NDVI,
@@ -43,8 +50,8 @@
 #' \dontrun{
 #'
 #' data <- prepare_predictors(
-#'   occurrence = species$sf_object,
-#'   predictors = climate
+#'   occurrence  = species$sf_object,
+#'   predictors  = climate
 #' )
 #'
 #' }
@@ -52,9 +59,12 @@
 #' @export
 
 prepare_predictors <- function(
-    occurrence,
-    predictors,
-    remove_cor = TRUE
+
+  occurrence,
+  predictors,
+  target     = "presence",
+  remove_cor = TRUE
+
 ){
 
   # ============================
@@ -62,9 +72,8 @@ prepare_predictors <- function(
   # ============================
 
   if(!inherits(occurrence, "sf")){
-    stop("occurrence doit etre un objet sf")
+    stop("occurrence doit etre un objet sf.")
   }
-
 
   # ============================
   # Conversion sf -> terra
@@ -72,84 +81,67 @@ prepare_predictors <- function(
 
   points <- terra::vect(occurrence)
 
-
   # ============================
   # Extraction raster
   # ============================
 
-  values <- terra::extract(
-    predictors,
-    points
-  )
+  values <- terra::extract(predictors, points)
 
-
-  # Supprimer ID terra
-  values <- values[,-1]
-
+  # Supprimer l'ID terra (premiere colonne)
+  values <- values[, -1]
 
   # ============================
   # Creation dataframe ML
   # ============================
 
   data_ml <- cbind(
-
     sf::st_drop_geometry(occurrence),
-
     values
-
   )
 
   # Variable cible SDM
-
   data_ml$presence <- 1
 
-
-  # Supprimer NA
-
+  # Suppression NA
   data_ml <- stats::na.omit(data_ml)
-
-
 
   # ============================
   # Suppression correlations
+  # (en excluant la variable cible)
   # ============================
 
   if(remove_cor){
 
-    numeric_data <- data_ml[
-      ,
-      sapply(data_ml, is.numeric)
-    ]
+    # Colonnes numeriques sans la variable cible
+    numeric_cols <- names(data_ml)[sapply(data_ml, is.numeric)]
+    numeric_cols <- setdiff(numeric_cols, target)
 
+    numeric_data <- data_ml[, numeric_cols, drop = FALSE]
 
-    cor_matrix <- stats::cor(
-      numeric_data,
-      use = "complete.obs"
-    )
-
+    cor_matrix <- stats::cor(numeric_data, use = "complete.obs")
 
     high_cor <- which(
-      abs(cor_matrix) > 0.9 &
-        abs(cor_matrix) < 1,
+      abs(cor_matrix) > 0.9 & abs(cor_matrix) < 1,
       arr.ind = TRUE
     )
 
-
     if(nrow(high_cor) > 0){
 
-      remove <- unique(
-        rownames(high_cor)
+      # Supprimer uniquement les colonnes de predicteurs
+      # (jamais la variable cible)
+      remove_cols <- setdiff(
+        unique(rownames(high_cor)),
+        target
       )
 
       data_ml <- data_ml[
-        ,
-        !names(data_ml) %in% remove
+        , !names(data_ml) %in% remove_cols,
+        drop = FALSE
       ]
 
     }
 
   }
-
 
   return(data_ml)
 

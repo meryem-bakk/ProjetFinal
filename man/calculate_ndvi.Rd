@@ -7,25 +7,27 @@
 calculate_ndvi(nir, red)
 }
 \arguments{
-\item{nir}{Bande proche infrarouge}
+\item{nir}{Bande proche infrarouge (valeur numerique ou SpatRaster).}
 
-\item{red}{Bande rouge}
+\item{red}{Bande rouge (valeur numerique ou SpatRaster).}
 }
 \value{
-Valeurs ou raster NDVI
+Valeurs ou raster NDVI compris entre -1 et 1.
 }
 \description{
-Calcule le NDVI à partir des bandes NIR et Rouge.
+Calcule le NDVI a partir des bandes NIR et Rouge.
 }
 \details{
-Le NDVI est calculé selon :
+Le NDVI est calcule selon :
 
 \deqn{
 NDVI = \frac{NIR - Red}{NIR + Red}
 }
 
-Les valeurs sont généralement comprises
-entre -1 et 1.
+Les pixels ou NIR + Red = 0 produisent NaN
+(comportement standard conforme a la norme NDVI).
+
+Compatible avec les scalaires, vecteurs et SpatRaster.
 }
 \examples{
 calculate_ndvi(0.8, 0.1)
@@ -35,4 +37,5 @@ calculate_ndvi(0.8, 0.1)
 Tucker, C.J. (1979).
 Red and photographic infrared linear combinations
 for monitoring vegetation.
+Remote Sensing of Environment.
 }

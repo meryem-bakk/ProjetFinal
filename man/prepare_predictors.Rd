@@ -4,7 +4,12 @@
 \alias{prepare_predictors}
 \title{Preparation des variables environnementales}
 \usage{
-prepare_predictors(occurrence, predictors, remove_cor = TRUE)
+prepare_predictors(
+  occurrence,
+  predictors,
+  target = "presence",
+  remove_cor = TRUE
+)
 }
 \arguments{
 \item{occurrence}{Objet sf contenant les points
@@ -13,8 +18,11 @@ de presence des especes.}
 \item{predictors}{Raster contenant les variables
 environnementales (NDVI, LAI, climat, altitude).}
 
+\item{target}{Nom de la variable cible a exclure
+du calcul de correlation. Par defaut "presence".}
+
 \item{remove_cor}{Logical. Supprimer ou non les
-variables fortement correlees.}
+variables fortement correlees (seuil > 0.9).}
 }
 \value{
 Dataframe pret pour la modelisation ML.
@@ -31,6 +39,10 @@ Cette fonction permet :
 \item suppression des valeurs manquantes,
 \item suppression optionnelle des variables correlees.
 }
+
+La variable cible (par defaut "presence") est
+exclue du calcul de correlation pour ne pas
+etre supprimee par erreur.
 
 Variables possibles :
 \itemize{
@@ -49,8 +61,8 @@ train_sdm_model().
 \dontrun{
 
 data <- prepare_predictors(
-  occurrence = species$sf_object,
-  predictors = climate
+  occurrence  = species$sf_object,
+  predictors  = climate
 )
 
 }

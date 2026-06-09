@@ -3,11 +3,11 @@
 #' Estime la biomasse vegetale disponible
 #' a partir du NDVI et du LAI.
 #'
-#' @param ndvi Raster ou valeurs NDVI
-#' @param lai Raster ou valeurs LAI optionnel
-#' @param method Methode d'estimation
+#' @param ndvi Raster ou valeurs NDVI (numerique ou SpatRaster).
+#' @param lai Raster ou valeurs LAI optionnel.
+#' @param method Methode d'estimation. Actuellement : "linear".
 #'
-#' @return Biomasse estimee (kg/ha)
+#' @return Biomasse estimee (kg/ha).
 #'
 #' @details
 #' Relation simplifiee :
@@ -31,18 +31,14 @@
 #' Remote Sensing of Environment.
 #'
 #' @examples
-#' biomass <- calculate_biomass(
-#'   ndvi = 0.6
-#' )
+#' biomass <- calculate_biomass(ndvi = 0.6)
 #'
 #' @export
 
 calculate_biomass <- function(
 
   ndvi,
-
-  lai = NULL,
-
+  lai    = NULL,
   method = "linear"
 
 ){
@@ -52,18 +48,10 @@ calculate_biomass <- function(
   # ==========================
 
   if(missing(ndvi)){
-
-    stop("NDVI is required")
-
+    stop("NDVI est obligatoire.")
   }
 
-  if(method != "linear"){
-
-    stop(
-      "Only 'linear' method is currently supported"
-    )
-
-  }
+  method <- match.arg(method, choices = "linear")
 
   # ==========================
   # NDVI seul
@@ -71,34 +59,18 @@ calculate_biomass <- function(
 
   if(is.null(lai)){
 
-    biomass <-
+    biomass <- 1000 * ndvi
 
-      1000 * ndvi
+  } else {
 
-  }
+    # ==========================
+    # NDVI + LAI
+    # ==========================
 
-  # ==========================
-  # NDVI + LAI
-  # ==========================
-
-  else{
-
-    biomass <-
-
-      (800 * ndvi) +
-
-      (200 * lai)
+    biomass <- (800 * ndvi) + (200 * lai)
 
   }
 
-  # ==========================
-  # Output
-  # ==========================
-
-  return(
-
-    biomass
-
-  )
+  return(biomass)
 
 }

@@ -3,11 +3,12 @@
 #' Genere automatiquement un rapport HTML ou PDF
 #' synthetisant les resultats du projet.
 #'
-#' @param species Donnees especes fourrageres.
-#' @param biomass Biomasse estimee.
-#' @param carrying_capacity Capacite de charge.
-#' @param grazing_pressure Pression pastorale.
-#' @param recommendations Recommandations de gestion.
+#' @param species Liste retournee par import_forage_species()
+#' contenant au moins un element \code{dataframe}.
+#' @param biomass Biomasse estimee (SpatRaster ou numerique).
+#' @param carrying_capacity Capacite de charge (SpatRaster ou numerique).
+#' @param grazing_pressure Pression pastorale (SpatRaster ou numerique).
+#' @param recommendations Vecteur de recommandations de gestion.
 #' @param output_format "html" ou "pdf".
 #' @param output_dir Dossier de sortie.
 #'
@@ -18,193 +19,115 @@
 generate_report <- function(
 
   species,
-
   biomass,
-
   carrying_capacity,
-
   grazing_pressure,
-
   recommendations,
-
   output_format = "html",
-
-  output_dir = "outputs"
+  output_dir    = "outputs"
 
 ){
 
-  if(!dir.exists(output_dir)){
+  # ==========================
+  # Verifications
+  # ==========================
 
-    dir.create(
-      output_dir,
-      recursive = TRUE
-    )
-
+  if(!output_format %in% c("html", "pdf")){
+    stop("output_format doit etre 'html' ou 'pdf'.")
   }
 
-  biomass_mean <- round(
+  if(is.null(species$dataframe)){
+    stop(
+      "species doit contenir un element 'dataframe'. ",
+      "Verifier que species provient de import_forage_species()."
+    )
+  }
 
-    mean(
-      terra::values(biomass),
-      na.rm = TRUE
-    ),
+  # Fonction utilitaire : moyenne compatible raster/scalaire
+  .safe_mean <- function(x, label){
+    if(inherits(x, "SpatRaster")){
+      round(terra::global(x, "mean", na.rm = TRUE)$mean, 2)
+    } else if(is.numeric(x)){
+      round(mean(x, na.rm = TRUE), 2)
+    } else {
+      stop(label, " doit etre un SpatRaster ou un vecteur numerique.")
+    }
+  }
 
-    2
+  # ==========================
+  # Calcul des indicateurs
+  # ==========================
 
-  )
+  biomass_mean   <- .safe_mean(biomass,           "biomass")
+  capacity_mean  <- .safe_mean(carrying_capacity, "carrying_capacity")
+  pressure_mean  <- .safe_mean(grazing_pressure,  "grazing_pressure")
 
-  capacity_mean <- round(
+  n_species <- nrow(species$dataframe)
 
-    mean(
-      terra::values(carrying_capacity),
-      na.rm = TRUE
-    ),
+  rec_text <- paste(recommendations, collapse = "<br>")
 
-    2
+  # ==========================
+  # Creation dossier
+  # ==========================
 
-  )
+  if(!dir.exists(output_dir)){
+    dir.create(output_dir, recursive = TRUE)
+  }
 
-  pressure_mean <- round(
+  # ==========================
+  # Ecriture du fichier Rmd
+  # ==========================
 
-    mean(
-      terra::values(grazing_pressure),
-      na.rm = TRUE
-    ),
+  rmd_file <- file.path(output_dir, "report.Rmd")
 
-    2
-
-  )
-
-  n_species <- nrow(
-
-    species$species_data
-
-  )
-
-  rec_text <- paste(
-
-    recommendations,
-
-    collapse = "<br>"
-
-  )
-
-  rmd_file <- file.path(
-
-    output_dir,
-
-    "report.Rmd"
-
-  )
+  # Supprimer le fichier Rmd temporaire a la sortie
+  on.exit(unlink(rmd_file), add = TRUE)
 
   lines <- c(
-
     "---",
-
-    paste0(
-      "title: \"Rapport de gestion pastorale\""
-    ),
-
-    if(output_format == "html")
-      "output: html_document"
-    else
-      "output: pdf_document",
-
+    "title: \"Rapport de gestion pastorale\"",
+    if(output_format == "html") "output: html_document" else "output: pdf_document",
     "---",
-
     "",
-
     "# Resume",
-
     "",
-
-    paste(
-      "Nombre d'especes fourrageres :",
-      n_species
-    ),
-
+    paste("Nombre d'especes fourrageres :", n_species),
     "",
-
-    paste(
-      "Biomasse moyenne :",
-      biomass_mean,
-      "kg/ha"
-    ),
-
+    paste("Biomasse moyenne :", biomass_mean, "kg/ha"),
     "",
-
-    paste(
-      "Capacite de charge moyenne :",
-      capacity_mean,
-      "UBT/ha"
-    ),
-
+    paste("Capacite de charge moyenne :", capacity_mean, "UBT/ha"),
     "",
-
-    paste(
-      "Pression pastorale moyenne :",
-      pressure_mean
-    ),
-
+    paste("Pression pastorale moyenne :", pressure_mean),
     "",
-
     "# Recommandations",
-
     "",
-
     rec_text,
-
     "",
-
     "# Cartes produites",
-
     "",
-
     "- Biomasse",
-
     "- Capacite de charge",
-
     "- Pression pastorale",
-
     "",
-
     "# Fin du rapport"
-
   )
 
-  writeLines(
+  writeLines(lines, rmd_file)
 
-    lines,
-
-    rmd_file
-
-  )
+  # ==========================
+  # Rendu
+  # ==========================
 
   rmarkdown::render(
-
-    input = rmd_file,
-
+    input      = rmd_file,
     output_dir = output_dir,
-
-    quiet = TRUE
-
+    quiet      = TRUE
   )
 
-  if(output_format == "html"){
-
-    report_file <- file.path(
-      output_dir,
-      "report.html"
-    )
-
-  } else {
-
-    report_file <- file.path(
-      output_dir,
-      "report.pdf"
-    )
-
-  }
+  report_file <- file.path(
+    output_dir,
+    paste0("report.", if(output_format == "html") "html" else "pdf")
+  )
 
   return(report_file)
 

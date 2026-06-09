@@ -7,10 +7,12 @@
 identify_refuge_areas(biomass, grazing_pressure, climate_score = 1)
 }
 \arguments{
-\item{biomass}{Raster ou valeurs de biomasse disponible.}
+\item{biomass}{Raster ou valeurs de biomasse disponible
+(numerique ou SpatRaster).}
 
 \item{grazing_pressure}{Raster ou valeurs d'indice
-de pression pastorale.}
+de pression pastorale (numerique ou SpatRaster).
+Doit etre strictement positif.}
 
 \item{climate_score}{Conditions climatiques favorables.
 Valeurs comprises entre 0 et 1.}
@@ -18,8 +20,8 @@ Valeurs comprises entre 0 et 1.}
 \value{
 Liste contenant :
 \itemize{
-\item refuge_index
-\item priority_area
+\item refuge_index : indice de valeur refuge (normalise)
+\item priority_area : zones au-dessus de la moyenne (TRUE/FALSE)
 }
 }
 \description{
@@ -27,14 +29,14 @@ Identifie les zones prioritaires pour la conservation
 en combinant biomasse, pression pastorale et climat.
 }
 \details{
-Une zone refuge correspond à :
+Une zone refuge correspond a :
 \itemize{
-\item biomasse élevée,
+\item biomasse elevee,
 \item faible pression pastorale,
 \item conditions climatiques favorables.
 }
 
-L'indice est calculé par :
+L'indice est calcule par :
 
 \deqn{
 RefugeIndex =
@@ -43,11 +45,10 @@ ClimateScore /
 GrazingPressure
 }
 
-Classification :
-\itemize{
-\item FALSE : zone non prioritaire
-\item TRUE : zone refuge prioritaire
-}
+ou BiomassScore = biomass / max(biomass).
+
+Les pixels avec pression <= 0 generent un avertissement
+et sont remplaces par NA.
 
 Compatible avec les rasters terra.
 }

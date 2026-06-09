@@ -7,10 +7,10 @@
 import_biomass_data(file)
 }
 \arguments{
-\item{file}{Chemin du fichier CSV ou Excel}
+\item{file}{Chemin du fichier CSV ou Excel.}
 }
 \value{
-Dataframe biomasse nettoye
+Dataframe biomasse nettoye.
 }
 \description{
 Importe les donnees terrain de biomasse.
@@ -20,7 +20,7 @@ Fonctionnalites :
 \itemize{
 \item import CSV / Excel
 \item gestion des valeurs manquantes
-\item harmonisation des unites
+\item harmonisation des unites avec avertissement
 }
 
 Variables attendues :
@@ -29,12 +29,15 @@ Variables attendues :
 \item date
 \item biomass
 }
+
+Si les valeurs de biomasse sont toutes inferieures
+a 100, la fonction suppose qu'elles sont exprimees
+en t/ha et les convertit en kg/ha (* 10 000).
+Un avertissement est emis dans ce cas.
 }
 \examples{
 \dontrun{
-biomass <- import_biomass_data(
-  "biomass.csv"
-)
+biomass <- import_biomass_data("biomass.csv")
 }
 
 }

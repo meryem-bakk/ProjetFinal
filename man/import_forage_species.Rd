@@ -7,11 +7,11 @@
 import_forage_species(species_name = NULL, csv_file = NULL, limit = 100)
 }
 \arguments{
-\item{species_name}{Scientific species name}
+\item{species_name}{Scientific species name.}
 
-\item{csv_file}{CSV file path}
+\item{csv_file}{CSV file path.}
 
-\item{limit}{Number of GBIF occurrences}
+\item{limit}{Number of GBIF occurrences.}
 }
 \value{
 A list containing:

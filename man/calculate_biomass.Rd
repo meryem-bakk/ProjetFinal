@@ -7,14 +7,14 @@
 calculate_biomass(ndvi, lai = NULL, method = "linear")
 }
 \arguments{
-\item{ndvi}{Raster ou valeurs NDVI}
+\item{ndvi}{Raster ou valeurs NDVI (numerique ou SpatRaster).}
 
-\item{lai}{Raster ou valeurs LAI optionnel}
+\item{lai}{Raster ou valeurs LAI optionnel.}
 
-\item{method}{Methode d'estimation}
+\item{method}{Methode d'estimation. Actuellement : "linear".}
 }
 \value{
-Biomasse estimee (kg/ha)
+Biomasse estimee (kg/ha).
 }
 \description{
 Estime la biomasse vegetale disponible
@@ -36,9 +36,7 @@ Biomass = 800 * NDVI + 200 * LAI
 Compatible avec les rasters terra.
 }
 \examples{
-biomass <- calculate_biomass(
-  ndvi = 0.6
-)
+biomass <- calculate_biomass(ndvi = 0.6)
 
 }
 \references{

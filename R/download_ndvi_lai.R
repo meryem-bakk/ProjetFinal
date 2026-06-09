@@ -11,6 +11,11 @@
 #' @param lai_file Chemin vers un fichier raster LAI
 #' local. Si NULL, telechargement MODIS automatique.
 #'
+#' @param boundary_file Chemin vers un fichier spatial
+#' de la zone d'etude (.shp ou .geojson).
+#' Si fourni, le centre de la zone est extrait
+#' automatiquement et utilise pour le telechargement MODIS.
+#'
 #' @param site_name Nom du site d'etude (utilise lors
 #' du telechargement MODIS).
 #'
@@ -39,11 +44,11 @@
 #' @details
 #' Deux modes de fonctionnement :
 #'
-#' \strong{Mode local} _ si \code{ndvi_file} et/ou
+#' \strong{Mode local} - si \code{ndvi_file} et/ou
 #' \code{lai_file} sont fournis, la fonction charge
 #' directement ces fichiers avec \code{terra::rast()}.
 #'
-#' \strong{Mode MODIS automatique} _ si aucun fichier
+#' \strong{Mode MODIS automatique} - si aucun fichier
 #' n'est fourni, la fonction utilise MODISTools pour
 #' telecharger :
 #' \itemize{
@@ -55,6 +60,10 @@
 #'
 #' Le facteur d'echelle MODIS est applique
 #' automatiquement (NDVI x 0.0001, LAI x 0.1).
+#'
+#' Les pixels invalides (valeur < -3000) sont remplaces
+#' par NA avant la moyenne temporelle, sans decaler
+#' les indices de position dans le raster.
 #'
 #' @references
 #' Didan, K. (2015). MOD13Q1 MODIS/Terra Vegetation
@@ -78,12 +87,17 @@
 #'   lai_file  = "data/lai.tif"
 #' )
 #'
-#' # Mode MODIS automatique
+#' # Mode MODIS automatique avec coordonnees
 #' veg <- download_ndvi_lai(
 #'   lat   = 31.5,
 #'   lon   = -7.5,
 #'   start = "2023-01-01",
 #'   end   = "2023-12-31"
+#' )
+#'
+#' # Mode MODIS automatique avec shapefile
+#' veg <- download_ndvi_lai(
+#'   boundary_file = "study_area.shp"
 #' )
 #'
 #' terra::plot(veg$NDVI)
@@ -94,19 +108,45 @@
 
 download_ndvi_lai <- function(
 
-  ndvi_file = NULL,
-  lai_file  = NULL,
-
-  site_name = "study_area",
-  lat       = NULL,
-  lon       = NULL,
-  start     = "2023-01-01",
-  end       = "2023-12-31",
-  km_lr     = 10,
-  km_ab     = 10,
-  path      = "modis_data"
+  ndvi_file     = NULL,
+  lai_file      = NULL,
+  boundary_file = NULL,
+  site_name     = "study_area",
+  lat           = NULL,
+  lon           = NULL,
+  start         = "2023-01-01",
+  end           = "2023-12-31",
+  km_lr         = 10,
+  km_ab         = 10,
+  path          = "modis_data"
 
 ){
+
+  # ==========================
+  # Zone d'etude via SHP/GeoJSON
+  # ==========================
+
+  if(!is.null(boundary_file)){
+
+    if(!file.exists(boundary_file)){
+      stop("Fichier spatial introuvable : ", boundary_file)
+    }
+
+    boundary <- sf::st_read(boundary_file, quiet = TRUE)
+
+    centroid <- sf::st_centroid(sf::st_union(boundary))
+
+    coords <- sf::st_coordinates(centroid)
+
+    lon <- coords[1]
+    lat <- coords[2]
+
+    message(
+      "Centre de la zone d'etude : ",
+      round(lat, 4), ", ", round(lon, 4)
+    )
+
+  }
 
   # ==========================
   # Fonction interne : MODIS -> SpatRaster
@@ -114,29 +154,82 @@ download_ndvi_lai <- function(
 
   .modis_to_raster <- function(df, scale_factor){
 
-    # Supprimer les valeurs hors plage MODIS
-    df <- df[df$value > -3000, ]
+    # Remplacer les valeurs hors plage par NA
+    # (sans supprimer les lignes — preserve les indices pixel)
+    df$value[df$value <= -3000] <- NA
 
     # Appliquer le facteur d'echelle
     df$value <- df$value * scale_factor
 
-    # Moyenne par pixel si plusieurs dates
+    # Extraire les dimensions et l'emprise depuis les metadonnees
+    nrows    <- unique(df$nrows)[1]
+    ncols    <- unique(df$ncols)[1]
+    xll      <- as.numeric(unique(df$xllcorner)[1])
+    yll      <- as.numeric(unique(df$yllcorner)[1])
+    cellsize <- as.numeric(unique(df$cellsize)[1])
+
+    n_pixels <- nrows * ncols
+
+    # Grille complete de reference (tous les pixels 1..N)
+    all_pixels <- data.frame(pixel = seq_len(n_pixels))
+
+    # Moyenne temporelle par pixel (NA ignores)
     df_mean <- stats::aggregate(
-      value ~ latitude + longitude,
-      data = df,
-      FUN  = mean,
+      value ~ pixel,
+      data  = df,
+      FUN   = mean,
       na.rm = TRUE
     )
 
-    # Conversion en SpatRaster georeference
-    rast_obj <- terra::rast(
-      df_mean[, c("longitude", "latitude", "value")],
-      type = "xyz",
-      crs  = "EPSG:4326"
+    # Fusion sur la grille complete :
+    # les pixels entierement NA restent NA (pas de decalage)
+    df_full <- merge(
+      all_pixels,
+      df_mean,
+      by    = "pixel",
+      all.x = TRUE
     )
 
-    return(rast_obj)
+    # Tri par pixel pour garantir l'ordre raster
+    df_full <- df_full[order(df_full$pixel), ]
 
+    # Construction du SpatRaster georeference
+    r <- terra::rast(
+      nrows = nrows,
+      ncols = ncols,
+      xmin  = xll,
+      xmax  = xll + ncols * cellsize,
+      ymin  = yll,
+      ymax  = yll + nrows * cellsize,
+      crs   = "EPSG:4326"
+    )
+
+    terra::values(r) <- df_full$value
+
+    return(r)
+
+  }
+
+  # ==========================
+  # Verification MODISTools
+  # ==========================
+
+  .check_modistools <- function(){
+    if(!requireNamespace("MODISTools", quietly = TRUE)){
+      stop(
+        "Le package MODISTools est requis. ",
+        "Installez-le avec : install.packages('MODISTools')"
+      )
+    }
+  }
+
+  .check_coords <- function(){
+    if(is.null(lat) || is.null(lon)){
+      stop(
+        "lat et lon sont obligatoires pour le ",
+        "telechargement MODIS automatique."
+      )
+    }
   }
 
   # ==========================
@@ -153,39 +246,27 @@ download_ndvi_lai <- function(
 
   } else {
 
-    if(is.null(lat) || is.null(lon)){
-      stop(
-        "lat et lon sont obligatoires pour le ",
-        "telechargement MODIS automatique."
-      )
-    }
-
-    if(!requireNamespace("MODISTools", quietly = TRUE)){
-      stop(
-        "Le package MODISTools est requis. ",
-        "Installez-le avec : install.packages('MODISTools')"
-      )
-    }
+    .check_coords()
+    .check_modistools()
 
     message("Telechargement NDVI (MOD13Q1)...")
 
     ndvi_raw <- MODISTools::mt_subset(
-      product    = "MOD13Q1",
-      band       = "250m_16_days_NDVI",
-      lat        = lat,
-      lon        = lon,
-      start      = start,
-      end        = end,
-      km_lr      = km_lr,
-      km_ab      = km_ab,
-      site_name  = site_name,
-      internal   = TRUE,
-      progress   = FALSE
+      product   = "MOD13Q1",
+      band      = "250m_16_days_NDVI",
+      lat       = lat,
+      lon       = lon,
+      start     = start,
+      end       = end,
+      km_lr     = km_lr,
+      km_ab     = km_ab,
+      site_name = site_name,
+      internal  = TRUE,
+      progress  = FALSE
     )
 
     ndvi <- .modis_to_raster(ndvi_raw, scale_factor = 0.0001)
 
-    # Sauvegarde locale optionnelle
     if(!dir.exists(path)){
       dir.create(path, recursive = TRUE)
     }
@@ -212,37 +293,30 @@ download_ndvi_lai <- function(
 
   } else {
 
-    if(is.null(lat) || is.null(lon)){
-      stop(
-        "lat et lon sont obligatoires pour le ",
-        "telechargement MODIS automatique."
-      )
-    }
-
-    if(!requireNamespace("MODISTools", quietly = TRUE)){
-      stop(
-        "Le package MODISTools est requis. ",
-        "Installez-le avec : install.packages('MODISTools')"
-      )
-    }
+    .check_coords()
+    .check_modistools()
 
     message("Telechargement LAI (MOD15A2H)...")
 
     lai_raw <- MODISTools::mt_subset(
-      product    = "MOD15A2H",
-      band       = "Lai_500m",
-      lat        = lat,
-      lon        = lon,
-      start      = start,
-      end        = end,
-      km_lr      = km_lr,
-      km_ab      = km_ab,
-      site_name  = site_name,
-      internal   = TRUE,
-      progress   = FALSE
+      product   = "MOD15A2H",
+      band      = "Lai_500m",
+      lat       = lat,
+      lon       = lon,
+      start     = start,
+      end       = end,
+      km_lr     = km_lr,
+      km_ab     = km_ab,
+      site_name = site_name,
+      internal  = TRUE,
+      progress  = FALSE
     )
 
     lai <- .modis_to_raster(lai_raw, scale_factor = 0.1)
+
+    if(!dir.exists(path)){
+      dir.create(path, recursive = TRUE)
+    }
 
     terra::writeRaster(
       lai,

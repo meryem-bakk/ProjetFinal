@@ -15,15 +15,16 @@ generate_report(
 )
 }
 \arguments{
-\item{species}{Donnees especes fourrageres.}
+\item{species}{Liste retournee par import_forage_species()
+contenant au moins un element \code{dataframe}.}
 
-\item{biomass}{Biomasse estimee.}
+\item{biomass}{Biomasse estimee (SpatRaster ou numerique).}
 
-\item{carrying_capacity}{Capacite de charge.}
+\item{carrying_capacity}{Capacite de charge (SpatRaster ou numerique).}
 
-\item{grazing_pressure}{Pression pastorale.}
+\item{grazing_pressure}{Pression pastorale (SpatRaster ou numerique).}
 
-\item{recommendations}{Recommandations de gestion.}
+\item{recommendations}{Vecteur de recommandations de gestion.}
 
 \item{output_format}{"html" ou "pdf".}
 
