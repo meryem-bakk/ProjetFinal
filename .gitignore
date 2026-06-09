@@ -5,3 +5,10 @@
 .DS_Store
 .quarto
 .positai
+modis_data/
+inst/modis_data/
+outputs/
+climate_data/
+*.tif
+*.pdf
+*.html
