@@ -65,7 +65,7 @@ download_ndvi_lai()              # NDVI + LAI (MODIS ou fichiers locaux)
 load_climate_data()              # variables bioclimatiques WorldClim
 import_biomass_data()            # biomasse terrain
         |
-calculate_ndvi()                 # calcul NDVI depuis bandes NIR/Red
+calculate_ndvi()                 # extraction NDVI depuis liste download_ndvi_lai()
 calculate_biomass()              # estimation biomasse (kg/ha)
 prepare_predictors()             # extraction raster + mise en forme ML
         |
@@ -153,22 +153,27 @@ veg <- download_ndvi_lai(
 
 ---
 
-### 3. Calcul du NDVI depuis bandes brutes
+### 3. Extraction du NDVI depuis MODIS
 
 ```r
-# Avec des valeurs scalaires
-ndvi_val <- calculate_ndvi(nir = 0.8, red = 0.1)
-ndvi_val
-# [1] 0.7777778
+# veg est la liste retournée par download_ndvi_lai()
+ndvi <- calculate_ndvi(veg)
 
-# Avec des rasters
-nir_rast  <- terra::rast("nir_band.tif")
-red_rast  <- terra::rast("red_band.tif")
-ndvi_rast <- calculate_ndvi(nir_rast, red_rast)
+ndvi
+# class       : SpatRaster
+# dimensions  : 85, 85, 1  (nrow, ncol, nlyr)
+# resolution  : 0.002083, 0.002083  (x, y)
+# extent      : -7.688, -7.312, 31.312, 31.688
+# coord. ref. : lon/lat WGS 84 (EPSG:4326)
+# name        : NDVI
+# min value   :  0.08
+# max value   :  0.63
 
-terra::global(ndvi_rast, "range", na.rm = TRUE)
-#        min       max
-# value 0.03  0.78
+terra::global(ndvi, "mean", na.rm = TRUE)
+#       mean
+# NDVI  0.31
+
+terra::plot(ndvi, main = "NDVI MODIS — Zone d'étude")
 ```
 
 ---
