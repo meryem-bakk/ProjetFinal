@@ -83,6 +83,34 @@ generate_report()                # rapport HTML ou PDF automatique
 
 ---
 
+## Résultats
+
+### Dashboard complet — Stipa tenacissima · Maroc semi-aride
+
+![Dashboard](outputs/dashboard_rangeland.png)
+
+### NDVI MODIS (MOD13Q1 · 250m)
+
+![NDVI](outputs/ndvi.png)
+
+### Biomasse végétale (kg/ha)
+
+![Biomasse](outputs/biomass.png)
+
+### Capacité de charge (UBT/ha)
+
+![Capacité de charge](outputs/carrying_capacity.png)
+
+### Pression pastorale
+
+![Pression pastorale](outputs/grazing_pressure.png)
+
+### Zones refuges prioritaires
+
+![Zones refuges](outputs/refuge_areas.png)
+
+---
+
 ## Exemples détaillés et outputs
 
 ### 1. Import des espèces fourragères (GBIF)
