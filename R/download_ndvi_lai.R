@@ -327,6 +327,32 @@ download_ndvi_lai <- function(
   }
 
   # ==========================
+  # Alignement LAI sur grille NDVI
+  # (MOD13Q1 = 250m, MOD15A2H = 500m)
+  # Resample bilineaire si resolutions differentes
+  # ==========================
+
+  if(!terra::compareGeom(ndvi, lai, stopOnError = FALSE)){
+
+    message(
+      "Resolutions differentes detectees (NDVI 250m / LAI 500m). ",
+      "Reechantillonnage du LAI sur la grille NDVI..."
+    )
+
+    lai <- terra::resample(lai, ndvi, method = "bilinear")
+
+    # Mettre a jour le fichier sauvegarde
+    if(!is.null(lai_file) == FALSE){
+      terra::writeRaster(
+        lai,
+        filename  = file.path(path, "lai.tif"),
+        overwrite = TRUE
+      )
+    }
+
+  }
+
+  # ==========================
   # Output
   # ==========================
 

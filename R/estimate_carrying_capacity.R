@@ -70,7 +70,9 @@ estimate_carrying_capacity <- function(
 
   capacity <- biomass / animal_demand
 
-
+  if(inherits(capacity, "SpatRaster")){
+    names(capacity) <- "carrying_capacity"
+  }
 
   # ==========================
   # Classification pression
@@ -121,7 +123,7 @@ estimate_carrying_capacity <- function(
 
   }
 
-
+  names(pressure) <- "grazing_pressure_class"
 
   # ==========================
   # Output
